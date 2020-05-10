@@ -31,5 +31,11 @@ const resolvers = {
   },
 };
 
+const server = new ApolloServer({
+  schema: buildFederatedSchema([{ typeDefs, resolvers }])
+});
 
+server.listen(4002).then(({ url }) => {
+  console.log(`🚀 Server ready at ${url}`);
+});
 
