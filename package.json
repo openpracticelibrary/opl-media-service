@@ -1,0 +1,24 @@
+{
+  "name": "opl-media-service",
+  "version": "1.0.0",
+  "description": "Media file uploads for Open Practice Library",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openpracticelibrary/opl-media-service.git"
+  },
+  "author": "Shahein Moussavi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/openpracticelibrary/opl-media-service/issues"
+  },
+  "homepage": "https://github.com/openpracticelibrary/opl-media-service#readme",
+  "dependencies": {
+    "@apollo/federation": "^0.15.0",
+    "apollo-server": "^2.13.0",
+    "aws-sdk": "^2.673.0"
+  }
+}
