@@ -10,7 +10,7 @@ class AWSS3Uploader {
       secretAccessKey: config.secretAccessKey
     });
 
-    this.s3 = AWS.S3();
+    this.s3 = new AWS.S3();
     this.config = config;
   }
 

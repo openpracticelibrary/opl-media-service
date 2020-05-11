@@ -3,6 +3,7 @@ const { buildFederatedSchema } = require('@apollo/federation');
 const { s3Uploader } = require('./uploaders');
 
 const typeDefs = gql`
+  scalar Upload
   type UploadedMediaResponse {
     filename: String!
     mimetype: String!

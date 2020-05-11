@@ -20,5 +20,9 @@
     "@apollo/federation": "^0.15.0",
     "apollo-server": "^2.13.0",
     "aws-sdk": "^2.673.0"
+  },
+  "devDependencies": {
+    "apollo-server-testing": "^2.13.0",
+    "jest": "^26.0.1"
   }
 }
