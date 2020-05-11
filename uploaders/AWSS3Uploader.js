@@ -27,7 +27,8 @@ class AWSS3Uploader {
   }
 
   async singleUploadResolver(parent, { file }) {
-    const { stream, filename, mimetype, encoding } = await file;
+    const { createReadStream, filename, mimetype, encoding } = await file;
+    const stream = createReadStream();
     const uploadStream = this.createUploadStream(filename);
 
     stream.pipe(uploadStream.writeStream);

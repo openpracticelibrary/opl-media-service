@@ -11,7 +11,7 @@ const typeDefs = gql`
     url: String!
   }
   type Query {
-    uploads: [UploadedMediaResponse]
+    hello: String!
   }
   type Mutation {
     singleUpload(file: Upload!): UploadedMediaResponse!
@@ -20,13 +20,13 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    files: () => {
+    hello: () => {
       // TODO: return record of files uploaded
       return "Hello World"
     },
-    Mutation: {
-      singleUpload: s3Uploader.singleUploadResolver.bind(s3Uploader),
-    }
+  },
+  Mutation: {
+    singleUpload: s3Uploader.singleUploadResolver.bind(s3Uploader),
   },
 };
 
