@@ -15,7 +15,6 @@ const typeDefs = gql`
   }
   type Mutation {
     singleUpload(file: Upload!): UploadedMediaResponse!
-    multipleUpload(files: [Upload!]!): UploadedMediaResponse!
   }
 `;
 
@@ -27,7 +26,6 @@ const resolvers = {
     },
     Mutation: {
       singleUpload: s3Uploader.singleUploadResolver.bind(s3Uploader),
-      multipleUpload: s3Uploader.multipleUploadResolver.bind(s3Uploader)
     }
   },
 };
