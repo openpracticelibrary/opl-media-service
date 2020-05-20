@@ -15,6 +15,33 @@ class GitHubUploader {
     this.branch = "master";
   }
 
+  async getImages(parent, args) {
+    const { data: content } = await this.octo.repos.getContents({
+      owner: this.org,
+      repo: this.repo,
+      path: "/images",
+    });
+
+    console.log(args);
+    const resolver = content.map(({ type, size, name, path, html_url }) => {
+      return {
+        type,
+        size,
+        name,
+        link: `${this.baseUrl}/${name}`,
+        rawGHLink: html_url,
+      };
+    });
+
+    if (args.sort) {
+      const sortOrder = args.sort === 'size_ASC' ? (a, b) => a.size - b.size : (a, b) => b.size - a.size;
+      console.log(sortOrder.toString());
+      return resolver.sort(sortOrder);
+    } else {
+      return resolver;
+    }
+  }
+
   async compressFile(file) {
     const { createReadStream, filename, mimetype, encoding } = await file;
     const stream = createReadStream();
