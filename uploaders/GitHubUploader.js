@@ -1,45 +1,41 @@
-const { Octokit } = require("@octokit/rest");
-const gm = require("gm");
-const stream = require("stream");
-const { readFile } = require("fs-extra");
+const gm = require('gm');
+const { readFile, unlink } = require('fs-extra');
 
 class GitHubUploader {
-  constructor(config) {
+  constructor(config, Octokit) {
     this.octo = new Octokit({
       auth: config.pat,
-      userAgent: "opl-media-service v0.0.1",
+      userAgent: 'opl-media-service v0.0.1',
     });
     this.org = config.org;
     this.repo = config.repo;
-    this.baseUrl = "https://openpracticelibrary.github.io/opl-media/images";
-    this.branch = "master";
+    this.baseUrl = 'https://openpracticelibrary.github.io/opl-media/images';
+    this.branch = 'master';
   }
 
   async getImages(parent, args) {
     const { data: content } = await this.octo.repos.getContents({
       owner: this.org,
       repo: this.repo,
-      path: "/images",
+      path: '/images',
     });
 
-    console.log(args);
-    const resolver = content.map(({ type, size, name, path, html_url }) => {
+    const resolver = content.map(({ type, size, name, html_url: htmlUrl }) => {
       return {
         type,
         size,
         name,
         link: `${this.baseUrl}/${name}`,
-        rawGHLink: html_url,
+        rawGHLink: htmlUrl,
       };
     });
 
     if (args.sort) {
-      const sortOrder = args.sort === 'size_ASC' ? (a, b) => a.size - b.size : (a, b) => b.size - a.size;
-      console.log(sortOrder.toString());
+      const sortOrder =
+        args.sort === 'size_ASC' ? (a, b) => a.size - b.size : (a, b) => b.size - a.size;
       return resolver.sort(sortOrder);
-    } else {
-      return resolver;
     }
+    return resolver;
   }
 
   async compressFile(file) {
@@ -48,11 +44,11 @@ class GitHubUploader {
 
     return new Promise(function (resolve, reject) {
       gm(stream, filename)
-        .resize(2000, null, ">")
+        .resize(2000, null, '>')
         .quality(60)
         .write(filename, function (err) {
           if (err) {
-            reject(`${filename} errored with ${err}!`);
+            reject(new Error(`${filename} errored with ${err}!`));
           }
 
           resolve({
@@ -64,18 +60,24 @@ class GitHubUploader {
     });
   }
 
+  async deleteFileAfterCommit(file) {
+    return new Promise(function (resolve, reject) {
+      unlink(file, function (err) {
+        if (err) reject(err);
+        console.info(`${file} committed and removed successfully`);
+        resolve(true);
+      });
+    });
+  }
+
   async uploadToRepo(parent, { file }) {
     try {
       const { filename, mimetype, encoding } = await this.compressFile(file);
       const currentCommit = await this.getCurrentCommit();
       const fileBlob = await this.createBlob(filename);
-      const newTree = await this.createNewTree(
-        fileBlob,
-        currentCommit.treeSha,
-        filename
-      );
+      const newTree = await this.createNewTree(fileBlob, currentCommit.treeSha, filename);
 
-      const commitMessage = "File upload from OPL";
+      const commitMessage = 'File upload from OPL';
 
       const { data: newCommit } = await this.createNewCommit(
         commitMessage,
@@ -85,6 +87,8 @@ class GitHubUploader {
 
       await this.setBranchToCommit(newCommit.sha);
 
+      await this.deleteFileAfterCommit(filename);
+
       return {
         filename,
         mimetype,
@@ -93,6 +97,9 @@ class GitHubUploader {
       };
     } catch (err) {
       console.error(err);
+      return {
+        filename: err,
+      };
     }
   }
 
@@ -118,7 +125,7 @@ class GitHubUploader {
   }
 
   _getFileAsUtf8(file) {
-    return readFile(file, "base64");
+    return readFile(file, 'base64');
   }
 
   async createBlob(file) {
@@ -127,7 +134,7 @@ class GitHubUploader {
       owner: this.org,
       repo: this.repo,
       content,
-      encoding: "base64",
+      encoding: 'base64',
     });
 
     return blobData.data;
@@ -140,8 +147,8 @@ class GitHubUploader {
       tree: [
         {
           path: `images/${filename}`,
-          mode: "100644",
-          type: "blob",
+          mode: '100644',
+          type: 'blob',
           sha: blob.sha,
         },
       ],

@@ -1,11 +1,11 @@
-const AWS = require("aws-sdk");
-const stream = require("stream");
+const AWS = require('aws-sdk');
+const stream = require('stream');
 
 class AWSS3Uploader {
   constructor(config) {
     AWS.config = new AWS.Config();
     AWS.config.update({
-      region: config.region || "us-east-1",
+      region: config.region || 'us-east-1',
       accessKeyId: config.accessKeyId,
       secretAccessKey: config.secretAccessKey,
     });
@@ -59,24 +59,19 @@ class AWSS3Uploader {
       return result;
     } catch (err) {
       console.error(err, err.stack);
+      throw err;
     }
   }
 
   async singleUploadResolver(parent, { file }) {
     const { createReadStream, filename, mimetype, encoding } = await file;
-    const stream = createReadStream();
+    const rs = createReadStream();
     const uploadStream = this.createUploadStream(filename);
 
-    stream.pipe(uploadStream.writeStream);
+    rs.pipe(uploadStream.writeStream);
     const data = await uploadStream.promise;
 
     return { filename, mimetype, encoding, url: data.Location };
-  }
-
-  async multipleUploadResolver(parent, { file }) {
-    return Promise.all(
-      files.map((f) => this.singleUploadResolver(null, { file: f }))
-    );
   }
 }
 

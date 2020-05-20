@@ -1,6 +1,6 @@
-const { ApolloServer, gql } = require("apollo-server");
-const { buildFederatedSchema } = require("@apollo/federation");
-const { gitUploader } = require("./uploaders");
+const { ApolloServer, gql } = require('apollo-server');
+const { buildFederatedSchema } = require('@apollo/federation');
+const { gitUploader } = require('./uploaders');
 
 const typeDefs = gql`
   scalar Upload
@@ -43,5 +43,5 @@ const server = new ApolloServer({
 });
 
 server.listen(4002).then(({ url }) => {
-  console.log(`🚀 Server ready at ${url}`);
+  console.info(`🚀 Server ready at ${url}`);
 });

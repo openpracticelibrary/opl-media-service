@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  rc-release:
+    runs-on: ubuntu-latest
+    env:
+      SHA8: ${GITHUB_SHA::8}
+
+    steps:
+      - name: Checkout opl-media-service
+        uses: actions/checkout@v2
+
+      - name: Tag with released version
+        uses: tinact/docker.image-retag@1.0.2
+        with:
+          image_name: openpracticelibrary/opl-media-service
+          image_old_tag: $SHA8
+          image_new_tag: ${{ github.event.release.tag_name }}
+          registry: quay.io
+          registry_username: ${{ secrets.QUAY_USER }}
+          registry_password: ${{ secrets.QUAY_PASS }}
+
+      - name: Tag with latest for future full releases
+        uses: tinact/docker.image_retag@1.0.2
+        with:
+          image_name: openpracticelibrary/opl-media-service
+          image_old_tag: $SHA8
+          registry: quay.io
+          registry_username: ${{ secrets.QUAY_USER }}
+          registry_password: ${{ secrets.QUAY_PASS }}
+
+  kustomize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v1
+        with:
+          kustomize-version: "3.5.5"
+
+      - name: Checkout cd repo
+        uses: actions/checkout@v2
+        with:
+          repository: openpracticelibrary/opl-cd
+          token: ${{ secrets.SERVICE_PAT }}
+
+      - name: Kustomize build
+        run: |
+          cd openpracticelibrary/media-service/overlays/production
+          kustomize edit set image quay.io/openpracticelibrary/opl-media-service:${{ github.event.release.tag_name }}
+          git add .
+          git commit -m "Automated Action: Updated opl-media-service release image tag to `${{ github.event.release.tag_name }}`"
+          git push origin master
