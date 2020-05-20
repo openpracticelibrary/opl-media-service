@@ -41,15 +41,13 @@ class GitHubUploader {
     try {
       const { filename, mimetype, encoding } = await this.compressFile(file);
       const currentCommit = await this.getCurrentCommit();
-      console.log("CURRENT COMMIT --> ", currentCommit);
       const fileBlob = await this.createBlob(filename);
-      console.log("CREATED BLOB --> ", fileBlob);
       const newTree = await this.createNewTree(
         fileBlob,
         currentCommit.treeSha,
         filename
       );
-      console.log("NEW TREE --> ", newTree);
+
       const commitMessage = "File upload from OPL";
 
       const { data: newCommit } = await this.createNewCommit(
@@ -57,7 +55,6 @@ class GitHubUploader {
         newTree.sha,
         currentCommit.commitSha
       );
-      console.log("NEW COMMIT --> ", newCommit);
 
       await this.setBranchToCommit(newCommit.sha);
 
@@ -68,7 +65,7 @@ class GitHubUploader {
         url: `${this.baseUrl}/${filename}`,
       };
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   }
 
