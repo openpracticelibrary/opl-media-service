@@ -1,17 +1,28 @@
-const { ApolloServer, gql } = require('apollo-server');
-const { buildFederatedSchema } = require('@apollo/federation');
-const { s3Uploader } = require('./uploaders');
+const { ApolloServer, gql } = require("apollo-server");
+const { buildFederatedSchema } = require("@apollo/federation");
+const { gitUploader } = require("./uploaders");
 
 const typeDefs = gql`
   scalar Upload
+  enum SortByInput {
+    size_ASC
+    size_DESC
+  }
   type UploadedMediaResponse {
     filename: String!
     mimetype: String!
     encoding: String!
     url: String!
   }
+  type Image {
+    type: String
+    size: Int
+    name: String
+    link: String
+    rawGHLink: String
+  }
   type Query {
-    hello: String!
+    images(sort: SortByInput): [Image!]!
   }
   type Mutation {
     singleUpload(file: Upload!): UploadedMediaResponse!
@@ -20,21 +31,17 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    hello: () => {
-      // TODO: return record of files uploaded
-      return "Hello World"
-    },
+    images: gitUploader.getImages.bind(gitUploader),
   },
   Mutation: {
-    singleUpload: s3Uploader.singleUploadResolver.bind(s3Uploader),
+    singleUpload: gitUploader.uploadToRepo.bind(gitUploader),
   },
 };
 
 const server = new ApolloServer({
-  schema: buildFederatedSchema([{ typeDefs, resolvers }])
+  schema: buildFederatedSchema([{ typeDefs, resolvers }]),
 });
 
 server.listen(4002).then(({ url }) => {
   console.log(`🚀 Server ready at ${url}`);
 });
-
