@@ -18,8 +18,11 @@
   "homepage": "https://github.com/openpracticelibrary/opl-media-service#readme",
   "dependencies": {
     "@apollo/federation": "^0.15.0",
+    "@octokit/rest": "^17.9.2",
     "apollo-server": "^2.13.0",
-    "aws-sdk": "^2.673.0"
+    "aws-sdk": "^2.673.0",
+    "fs-extra": "^9.0.0",
+    "gm": "^1.23.1"
   },
   "devDependencies": {
     "apollo-server-testing": "^2.13.0",

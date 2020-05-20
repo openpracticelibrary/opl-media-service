@@ -1,6 +1,6 @@
 const { ApolloServer, gql } = require('apollo-server');
 const { buildFederatedSchema } = require('@apollo/federation');
-const { s3Uploader } = require('./uploaders');
+const { gitUploader } = require('./uploaders');
 
 const typeDefs = gql`
   scalar Upload
@@ -26,7 +26,7 @@ const resolvers = {
     },
   },
   Mutation: {
-    singleUpload: s3Uploader.singleUploadResolver.bind(s3Uploader),
+    singleUpload: gitUploader.uploadToRepo.bind(gitUploader),
   },
 };
 
