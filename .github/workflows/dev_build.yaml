@@ -1,4 +1,4 @@
-name: Dev Build
+name: Media Svc Dev Build
 
 on:
   push:
@@ -34,6 +34,7 @@ jobs:
         run: echo "Oops! We should get some of those integration test thingys in here soon..."
   build-image-and-push:
     runs-on: ubuntu-latest
+    needs: build-and-test
 
     steps:
       - name: Git Checkout
@@ -49,6 +50,7 @@ jobs:
           tags: ${{ github.sha }}
   kustomize:
     runs-on: ubuntu-latest
+    needs: build-image-and-push
 
     steps:
       - name: Setup Kustomize
