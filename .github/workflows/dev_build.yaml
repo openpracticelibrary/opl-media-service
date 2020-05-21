@@ -34,8 +34,6 @@ jobs:
         run: echo "Oops! We should get some of those integration test thingys in here soon..."
   build-image-and-push:
     runs-on: ubuntu-latest
-    env:
-      SHA8: ${GITHUB_SHA::8}
 
     steps:
       - name: Git Checkout
@@ -48,11 +46,10 @@ jobs:
           password: ${{ secrets.QUAY_PASS }}
           registry: quay.io
           repository: openpracticelibrary/opl-media-service
-          tags: $SHA8
+          tags: ${{ github.sha }}
   kustomize:
     runs-on: ubuntu-latest
-    env:
-      SHA8: ${GITHUB_SHA::8}
+
     steps:
       - name: Setup Kustomize
         uses: imranismail/setup-kustomize@v1
@@ -68,9 +65,11 @@ jobs:
       - name: Kustomize build
         run: |
           cd openpracticelibrary/media-service/overlays/development
-          kustomize edit set image quay.io/openpracticelibrary/opl-media-service:${SHA8}
+          kustomize edit set image quay.io/openpracticelibrary/opl-media-service:${{ github.sha }}
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "shahein@redhat.com"
           git add .
-          git commit -m "Automated Action: Updated opl-media-service dev image tag to `${SHA8}`"
+          git commit -m "Automated Action: Updated opl-media-service dev image tag"
           git push origin master
 
 

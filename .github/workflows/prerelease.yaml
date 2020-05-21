@@ -7,8 +7,6 @@ on:
 jobs:
   rc-release:
     runs-on: ubuntu-latest
-    env:
-      SHA8: ${GITHUB_SHA::8}
 
     steps:
       - name: Checkout opl-media-service
@@ -18,7 +16,7 @@ jobs:
         uses: tinact/docker.image-retag@1.0.2
         with:
           image_name: openpracticelibrary/opl-media-service
-          image_old_tag: $SHA8
+          image_old_tag: ${{ github.sha }}
           image_new_tag: ${{ github.event.release.tag_name }}
           registry: quay.io
           registry_username: ${{ secrets.QUAY_USER }}
@@ -28,7 +26,7 @@ jobs:
         uses: tinact/docker.image_retag@1.0.2
         with:
           image_name: openpracticelibrary/opl-media-service
-          image_old_tag: $SHA8
+          image_old_tag: ${{ github.sha }}
           registry: quay.io
           registry_username: ${{ secrets.QUAY_USER }}
           registry_password: ${{ secrets.QUAY_PASS }}
@@ -51,6 +49,8 @@ jobs:
         run: |
           cd openpracticelibrary/media-service/overlays/prerelease
           kustomize edit set image quay.io/openpracticelibrary/opl-media-service:${{ github.event.release.tag_name }}
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "shahein@redhat.com"
           git add .
-          git commit -m "Automated Action: Updated opl-media-service prerelease image tag to `${{ github.event.release.tag_name }}`"
+          git commit -m "Automated Action: Updated opl-media-service prerelease image tag"
           git push origin master
