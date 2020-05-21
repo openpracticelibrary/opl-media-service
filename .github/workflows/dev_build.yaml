@@ -47,7 +47,7 @@ jobs:
           password: ${{ secrets.QUAY_PASS }}
           registry: quay.io
           repository: openpracticelibrary/opl-media-service
-          tags: ${{ github.sha }}
+          tags: ${{ github.sha }},latest
   kustomize:
     runs-on: ubuntu-latest
     needs: build-image-and-push
