@@ -33,6 +33,7 @@ jobs:
 
   kustomize:
     runs-on: ubuntu-latest
+    needs: rc-release
     steps:
       - name: Setup Kustomize
         uses: imranismail/setup-kustomize@v1
