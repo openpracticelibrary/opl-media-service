@@ -1,0 +1,75 @@
+name: Dev Build
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - README.md
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [12.x]
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v2
+
+      - name: Use node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - run: npm install
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Run Unit Tests
+        run: npm run test
+
+      - name: Run API tests
+        run: echo "Oops! We should get some of those integration test thingys in here soon..."
+  build-image-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v2
+
+      - name: Build and push image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.QUAY_USER }}
+          password: ${{ secrets.QUAY_PASS }}
+          registry: quay.io
+          repository: openpracticelibrary/opl-media-service
+          tags: ${{ github.sha }}
+  kustomize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v1
+        with:
+          kustomize-version: "3.5.5"
+
+      - name: Checkout cd repo
+        uses: actions/checkout@v2
+        with:
+          repository: openpracticelibrary/opl-cd
+          token: ${{ secrets.SERVICE_PAT }}
+
+      - name: Kustomize build
+        run: |
+          cd openpracticelibrary/media-service/overlays/development
+          kustomize edit set image quay.io/openpracticelibrary/opl-media-service:${{ github.sha }}
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "shahein@redhat.com"
+          git add .
+          git commit -m "Automated Action: Updated opl-media-service dev image tag"
+          git push origin master
+
+
