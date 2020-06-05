@@ -23,7 +23,7 @@ jobs:
           registry_password: ${{ secrets.QUAY_PASS }}
 
       - name: Tag with latest for future full releases
-        uses: tinact/docker.image_retag@1.0.2
+        uses: tinact/docker.image-retag@1.0.2
         with:
           image_name: openpracticelibrary/opl-media-service
           image_old_tag: ${{ github.sha }}
