@@ -9,7 +9,7 @@ class GitHubUploader {
     });
     this.org = config.org;
     this.repo = config.repo;
-    this.baseUrl = 'https://openpracticelibrary.github.io/opl-media/images';
+    this.baseUrl = config.pagesUrl;
     this.branch = 'master';
   }
 

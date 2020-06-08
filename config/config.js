@@ -3,6 +3,9 @@ const { AWS_ACCESS_KEY } = process.env;
 const { AWS_SECRET_KEY } = process.env;
 const { AWS_S3_BUCKET } = process.env;
 const { GITHUB_PAT } = process.env;
+const { GITHUB_ORG } = process.env;
+const { GITHUB_REPO } = process.env;
+const { GITHUB_PAGES_URL } = process.env;
 
 const config = {
   AWSConfig: {
@@ -13,8 +16,9 @@ const config = {
   },
   GitHubConfig: {
     pat: GITHUB_PAT,
-    org: 'openpracticelibrary',
-    repo: 'opl-media',
+    org: GITHUB_ORG,
+    repo: GITHUB_REPO,
+    pagesUrl: GITHUB_PAGES_URL || 'https://openpracticelibrary.github.io/opl-media/images',
   },
 };
 
