@@ -47,7 +47,7 @@ class GitHubUploader {
         .resize(500)
         .quality(40)
         .write(thumbname, function (err) {
-          console.log(err);
+          if (err) throw err;
         });
       gm(stream, filename)
         .resize(2000, null, '>')
@@ -67,7 +67,6 @@ class GitHubUploader {
   }
 
   async deleteFileAfterCommit(file) {
-    console.log(file);
     return new Promise(function (resolve, reject) {
       unlink(file, function (err) {
         if (err) reject(err);
