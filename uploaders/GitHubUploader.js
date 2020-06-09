@@ -41,8 +41,14 @@ class GitHubUploader {
   async compressFile(file) {
     const { createReadStream, filename, mimetype, encoding } = await file;
     const stream = createReadStream();
-
+    const thumbname = `thumb_${filename}`;
     return new Promise(function (resolve, reject) {
+      gm(stream, filename)
+        .resize(500)
+        .quality(40)
+        .write(thumbname, function (err) {
+          console.log(err);
+        });
       gm(stream, filename)
         .resize(2000, null, '>')
         .quality(60)
@@ -61,10 +67,17 @@ class GitHubUploader {
   }
 
   async deleteFileAfterCommit(file) {
+    console.log(file);
     return new Promise(function (resolve, reject) {
       unlink(file, function (err) {
         if (err) reject(err);
         console.info(`${file} committed and removed successfully`);
+        // resolve(true);
+      });
+
+      unlink(`thumb_${file}`, function (err) {
+        if (err) reject(err);
+        console.info(`thumb_${file} committed and removed successfully`);
         resolve(true);
       });
     });
@@ -147,6 +160,12 @@ class GitHubUploader {
       tree: [
         {
           path: `images/${filename}`,
+          mode: '100644',
+          type: 'blob',
+          sha: blob.sha,
+        },
+        {
+          path: `images/thumb_${filename}`,
           mode: '100644',
           type: 'blob',
           sha: blob.sha,
