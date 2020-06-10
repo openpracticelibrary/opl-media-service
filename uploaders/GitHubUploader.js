@@ -68,17 +68,18 @@ class GitHubUploader {
     });
   }
 
-  async deleteFileAfterCommit(file) {
+  async deleteFileAfterCommit(file, type) {
     return new Promise(function (resolve, reject) {
+      if (type === 'cover') {
+        unlink(`thumb_${file}`, function (err) {
+          if (err) reject(err);
+          console.info(`thumb_${file} committed and removed successfully`);
+        });
+      }
+
       unlink(file, function (err) {
         if (err) reject(err);
         console.info(`${file} committed and removed successfully`);
-        // resolve(true);
-      });
-
-      unlink(`thumb_${file}`, function (err) {
-        if (err) reject(err);
-        console.info(`thumb_${file} committed and removed successfully`);
         resolve(true);
       });
     });
@@ -107,7 +108,7 @@ class GitHubUploader {
 
       await this.setBranchToCommit(newCommit.sha);
 
-      await this.deleteFileAfterCommit(filename);
+      await this.deleteFileAfterCommit(filename, type);
 
       return {
         filename,
