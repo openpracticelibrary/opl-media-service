@@ -26,6 +26,7 @@ const typeDefs = gql`
   }
   type Mutation {
     singleUpload(file: Upload!): UploadedMediaResponse!
+    coverUpload(file: Upload!): UploadedMediaResponse!
   }
 `;
 
@@ -35,6 +36,7 @@ const resolvers = {
   },
   Mutation: {
     singleUpload: gitUploader.uploadToRepo.bind(gitUploader),
+    coverUpload: gitUploader.uploadCover.bind(gitUploader),
   },
 };
 
