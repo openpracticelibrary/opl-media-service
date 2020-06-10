@@ -38,17 +38,19 @@ class GitHubUploader {
     return resolver;
   }
 
-  async compressFile(file) {
+  async compressFile(file, type) {
     const { createReadStream, filename, mimetype, encoding } = await file;
     const stream = createReadStream();
     const thumbname = `thumb_${filename}`;
     return new Promise(function (resolve, reject) {
-      gm(stream, filename)
-        .resize(500)
-        .quality(40)
-        .write(thumbname, function (err) {
-          if (err) throw err;
-        });
+      if (type === 'cover') {
+        gm(stream, filename)
+          .resize(500)
+          .quality(40)
+          .write(thumbname, function (err) {
+            if (err) throw err;
+          });
+      }
       gm(stream, filename)
         .resize(2000, null, '>')
         .quality(60)
@@ -82,9 +84,15 @@ class GitHubUploader {
     });
   }
 
-  async uploadToRepo(parent, { file }) {
+  async uploadCoverToRepo(parent, { file }) {
+    this.uploadToRepo(parent, { file, type: 'cover' });
+
+    return true;
+  }
+
+  async uploadToRepo(parent, { file, type = 'library' }) {
     try {
-      const { filename, mimetype, encoding } = await this.compressFile(file);
+      const { filename, mimetype, encoding } = await this.compressFile(file, type);
       const currentCommit = await this.getCurrentCommit();
       const fileBlob = await this.createBlob(filename);
       const newTree = await this.createNewTree(fileBlob, currentCommit.treeSha, filename);
