@@ -36,7 +36,7 @@ const resolvers = {
   },
   Mutation: {
     singleUpload: gitUploader.uploadToRepo.bind(gitUploader),
-    coverUpload: gitUploader.uploadCoverToRepo.bind(gitUploader),
+    coverUpload: gitUploader.uploadToRepo.bind(gitUploader),
   },
 };
 
