@@ -89,9 +89,31 @@ class GitHubUploader {
   }
 
   async uploadCover(parent, { file }) {
-    this.uploadToRepo(parent, { file, type: 'cover' });
+    const { filename, mimetype, encoding } = await this.uploadToRepo(parent, {
+      file,
+      type: 'cover',
+    });
 
-    return true;
+    return {
+      filename,
+      mimetype,
+      encoding,
+      url: `${this.baseUrl}/${filename}`,
+    };
+  }
+
+  async uploadProfile(parent, { file }) {
+    const { filename, mimetype, encoding } = await this.uploadToRepo(parent, {
+      file,
+      type: 'profile',
+    });
+
+    return {
+      filename,
+      mimetype,
+      encoding,
+      url: `${this.baseUrl}/${filename}`,
+    };
   }
 
   async uploadToRepo(parent, { file, type = 'library' }) {
