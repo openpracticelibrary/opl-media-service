@@ -11,6 +11,7 @@ class GitHubUploader {
     this.baseUrl = config.pagesUrl;
     this.branch = 'master';
     this.outputStream = [];
+    this.outputThumbStream = [];
   }
 
   async getImages(parent, args) {
@@ -39,7 +40,6 @@ class GitHubUploader {
   }
 
   async compressFile(file, type) {
-    console.log('compressFile');
     const { createReadStream, filename, mimetype, encoding } = await file;
     const stream = createReadStream();
 
@@ -49,10 +49,20 @@ class GitHubUploader {
         gm(stream, filename)
           .resize(500, 300)
           .quality(60)
-          .write(thumbname, function (err) {
+          .stream(function (err, stdout) {
             if (err) {
-              reject(new Error(`thumb_${filename} errored with ${err}!`));
+              reject(new Error(`${thumbname} errored with ${err}!`));
             }
+
+            const bufs = [];
+            stdout.on('data', function (d) {
+              bufs.push(d);
+            });
+
+            stdout.on('end', function () {
+              this.outputThumbStream = Buffer.concat(bufs);
+              resolve({ filename: thumbname, mimetype, encoding, stream: this.outputThumbStream });
+            });
           });
       }
       gm(stream, filename)
@@ -115,8 +125,6 @@ class GitHubUploader {
   // }
 
   async uploadToRepo(parent, { file, type = 'library' }) {
-    console.log(file);
-    console.log(`type = ${type}`);
     try {
       const { filename, mimetype, encoding, stream } = await this.compressFile(file, type);
       const currentCommit = await this.getCurrentCommit();
