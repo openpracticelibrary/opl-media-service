@@ -11,6 +11,7 @@ class GitHubUploader {
     this.baseUrl = config.pagesUrl;
     this.branch = 'master';
     this.outputStream = [];
+    this.outputThumbStream = [];
   }
 
   async getImages(parent, args) {
@@ -42,41 +43,52 @@ class GitHubUploader {
     const { createReadStream, filename, mimetype, encoding } = await file;
     const stream = createReadStream();
 
-    return new Promise(function (resolve, reject) {
-      gm(stream, filename)
-        .resize(2000, null, '>')
-        .quality(60)
-        .stream(function (err, stdout) {
-          if (err) {
-            reject(new Error(`${filename} errored with ${err}!`));
-          }
+    const streamArray = ['outputStream', 'outputThumbStream'].map(function (i) {
+      return new Promise(function (resolve, reject) {
+        let w = 2000;
+        let q = 60;
+        if (i === 'outputStream') {
+          w = 2000;
+          q = 60;
+        } else {
+          w = 500;
+          q = 50;
+        }
+        gm(stream, filename)
+          .resize(w, null, '>')
+          .quality(q)
+          .stream(function (err, stdout) {
+            if (err) {
+              reject(new Error(`${filename} errored with ${err}!`));
+            }
 
-          const bufs = [];
-          stdout.on('data', function (d) {
-            bufs.push(d);
+            const bufs = [];
+            stdout.on('data', function (d) {
+              bufs.push(d);
+            });
+
+            stdout.on('end', function () {
+              this[i] = Buffer.concat(bufs);
+              resolve({ filename, mimetype, encoding, stream: this[i] });
+            });
           });
-
-          stdout.on('end', function () {
-            this.outputStream = Buffer.concat(bufs);
-            resolve({ filename, mimetype, encoding, stream: this.outputStream });
-          });
-        });
+      });
     });
-  }
 
-  async deleteFileAfterCommit(file) {
-    return new Promise(function (resolve) {
-      console.info(`${file} committed and removed successfully`);
-      resolve(true);
-    });
+    return streamArray;
   }
 
   async uploadToRepo(parent, { file }) {
     try {
-      const { filename, mimetype, encoding, stream } = await this.compressFile(file);
+      const streamArray = await this.compressFile(file);
+      const [imageStream, thumbStream] = await Promise.all(streamArray);
       const currentCommit = await this.getCurrentCommit();
-      const fileBlob = await this.createBlob(stream);
-      const newTree = await this.createNewTree(fileBlob, currentCommit.treeSha, filename);
+      const fileBlob = await this.createBlob([imageStream.stream, thumbStream.stream]);
+      const newTree = await this.createNewTree(
+        fileBlob,
+        currentCommit.treeSha,
+        imageStream.filename
+      );
 
       const commitMessage = 'File upload from OPL';
 
@@ -88,13 +100,11 @@ class GitHubUploader {
 
       await this.setBranchToCommit(newCommit.sha);
 
-      await this.deleteFileAfterCommit(filename);
-
       return {
-        filename,
-        mimetype,
-        encoding,
-        url: `${this.baseUrl}/${filename}`,
+        filename: imageStream.filename,
+        mimetype: imageStream.mimetype,
+        encoding: imageStream.encoding,
+        url: `${this.baseUrl}/${imageStream.filename}`,
       };
     } catch (err) {
       console.error(err);
@@ -129,30 +139,43 @@ class GitHubUploader {
     return file.toString('base64');
   }
 
-  async createBlob(stream) {
-    const content = await this._getFileAsUtf8(stream);
-    const blobData = await this.octo.git.createBlob({
-      owner: this.org,
-      repo: this.repo,
-      content,
-      encoding: 'base64',
-    });
+  async createBlob(file) {
+    const blobArr = [];
+    for (let i = 0; i < file.length; i += 1) {
+      const content = file[i].toString('base64');
+      // eslint-disable-next-line no-await-in-loop
+      const tmp = await this.octo.git.createBlob({
+        owner: this.org,
+        repo: this.repo,
+        content,
+        encoding: 'base64',
+      });
+      blobArr.push(tmp.data);
+    }
 
-    return blobData.data;
+    return Promise.resolve(blobArr);
   }
 
   async createNewTree(blob, parentTreeSha, filename) {
+    const myTree = [
+      {
+        path: `images/${filename}`,
+        mode: '100644',
+        type: 'blob',
+        sha: blob[0].sha,
+      },
+      {
+        path: `thumbs/${filename}`,
+        mode: '100644',
+        type: 'blob',
+        sha: blob[1].sha,
+      },
+    ];
+
     const { data } = await this.octo.git.createTree({
       owner: this.org,
       repo: this.repo,
-      tree: [
-        {
-          path: `images/${filename}`,
-          mode: '100644',
-          type: 'blob',
-          sha: blob.sha,
-        },
-      ],
+      tree: myTree,
       base_tree: parentTreeSha,
     });
 
