@@ -25,7 +25,7 @@ const typeDefs = gql`
     images(sort: SortByInput): [Image!]!
   }
   type Mutation {
-    singleUpload(file: Upload!, type: String): UploadedMediaResponse!
+    singleUpload(file: Upload!): UploadedMediaResponse!
   }
 `;
 
