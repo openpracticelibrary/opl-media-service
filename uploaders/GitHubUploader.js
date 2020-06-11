@@ -1,5 +1,4 @@
 const gm = require('gm');
-const { readFile, unlink } = require('fs-extra');
 
 class GitHubUploader {
   constructor(config, Octokit) {
@@ -11,6 +10,7 @@ class GitHubUploader {
     this.repo = config.repo;
     this.baseUrl = config.pagesUrl;
     this.branch = 'master';
+    this.outputStream = [];
   }
 
   async getImages(parent, args) {
@@ -39,6 +39,7 @@ class GitHubUploader {
   }
 
   async compressFile(file, type) {
+    console.log('compressFile');
     const { createReadStream, filename, mimetype, encoding } = await file;
     const stream = createReadStream();
 
@@ -57,70 +58,69 @@ class GitHubUploader {
       gm(stream, filename)
         .resize(2000, null, '>')
         .quality(60)
-        .write(filename, function (err) {
+        .stream(function (err, stdout) {
           if (err) {
             reject(new Error(`${filename} errored with ${err}!`));
           }
 
-          resolve({
-            filename,
-            mimetype,
-            encoding,
+          const bufs = [];
+          stdout.on('data', function (d) {
+            bufs.push(d);
+          });
+
+          stdout.on('end', function () {
+            this.outputStream = Buffer.concat(bufs);
+            resolve({ filename, mimetype, encoding, stream: this.outputStream });
           });
         });
     });
   }
 
   async deleteFileAfterCommit(file, type) {
-    return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve) {
       if (type === 'cover') {
-        unlink(`thumb_${file}`, function (err) {
-          if (err) reject(err);
-          console.info(`thumb_${file} committed and removed successfully`);
-        });
+        console.info(`thumb_${file} committed and removed successfully`);
       }
-
-      unlink(file, function (err) {
-        if (err) reject(err);
-        console.info(`${file} committed and removed successfully`);
-        resolve(true);
-      });
+      console.info(`${file} committed and removed successfully`);
+      resolve(true);
     });
   }
 
-  async uploadCover(parent, { file }) {
-    const { filename, mimetype, encoding } = await this.uploadToRepo(parent, {
-      file,
-      type: 'cover',
-    });
+  // async uploadCover(parent, { file }) {
+  //   const { filename, mimetype, encoding } = await this.uploadToRepo(parent, {
+  //     file,
+  //     type: 'cover',
+  //   });
 
-    return {
-      filename,
-      mimetype,
-      encoding,
-      url: `${this.baseUrl}/${filename}`,
-    };
-  }
+  //   return {
+  //     filename,
+  //     mimetype,
+  //     encoding,
+  //     url: `${this.baseUrl}/${filename}`,
+  //   };
+  // }
 
-  async uploadProfile(parent, { file }) {
-    const { filename, mimetype, encoding } = await this.uploadToRepo(parent, {
-      file,
-      type: 'profile',
-    });
+  // async uploadProfile(parent, { file }) {
+  //   const { filename, mimetype, encoding } = await this.uploadToRepo(parent, {
+  //     file,
+  //     type: 'profile',
+  //   });
 
-    return {
-      filename,
-      mimetype,
-      encoding,
-      url: `${this.baseUrl}/${filename}`,
-    };
-  }
+  //   return {
+  //     filename,
+  //     mimetype,
+  //     encoding,
+  //     url: `${this.baseUrl}/${filename}`,
+  //   };
+  // }
 
   async uploadToRepo(parent, { file, type = 'library' }) {
+    console.log(file);
+    console.log(`type = ${type}`);
     try {
-      const { filename, mimetype, encoding } = await this.compressFile(file, type);
+      const { filename, mimetype, encoding, stream } = await this.compressFile(file, type);
       const currentCommit = await this.getCurrentCommit();
-      const fileBlob = await this.createBlob(filename, type);
+      const fileBlob = await this.createBlob(stream, type);
       const newTree = await this.createNewTree(fileBlob, currentCommit.treeSha, filename, type);
 
       const commitMessage = 'File upload from OPL';
@@ -171,7 +171,7 @@ class GitHubUploader {
   }
 
   _getFileAsUtf8(file) {
-    return readFile(file, 'base64');
+    return file.toString('base64');
   }
 
   async createBlob(file, type) {

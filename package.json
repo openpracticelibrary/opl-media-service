@@ -23,7 +23,6 @@
     "@octokit/rest": "^17.9.2",
     "apollo-server": "^2.14.2",
     "aws-sdk": "^2.673.0",
-    "fs-extra": "^9.0.0",
     "gm": "^1.23.1"
   },
   "devDependencies": {
