@@ -78,7 +78,7 @@ class GitHubUploader {
     return streamArray;
   }
 
-  async uploadToRepo(parent, { file, type = 'library' }) {
+  async uploadToRepo(parent, { file }) {
     try {
       const streamArray = await this.compressFile(file);
       const [imageStream, thumbStream] = await Promise.all(streamArray);
