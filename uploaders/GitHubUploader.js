@@ -1,5 +1,4 @@
 const gm = require('gm');
-const { readFile, unlink } = require('fs-extra');
 
 class GitHubUploader {
   constructor(config, Octokit) {
@@ -11,6 +10,7 @@ class GitHubUploader {
     this.repo = config.repo;
     this.baseUrl = config.pagesUrl;
     this.branch = 'master';
+    this.outputStream = [];
   }
 
   async getImages(parent, args) {
@@ -46,35 +46,36 @@ class GitHubUploader {
       gm(stream, filename)
         .resize(2000, null, '>')
         .quality(60)
-        .write(filename, function (err) {
+        .stream(function (err, stdout) {
           if (err) {
             reject(new Error(`${filename} errored with ${err}!`));
           }
 
-          resolve({
-            filename,
-            mimetype,
-            encoding,
+          const bufs = [];
+          stdout.on('data', function (d) {
+            bufs.push(d);
+          });
+
+          stdout.on('end', function () {
+            this.outputStream = Buffer.concat(bufs);
+            resolve({ filename, mimetype, encoding, stream: this.outputStream });
           });
         });
     });
   }
 
   async deleteFileAfterCommit(file) {
-    return new Promise(function (resolve, reject) {
-      unlink(file, function (err) {
-        if (err) reject(err);
-        console.info(`${file} committed and removed successfully`);
-        resolve(true);
-      });
+    return new Promise(function (resolve) {
+      console.info(`${file} committed and removed successfully`);
+      resolve(true);
     });
   }
 
   async uploadToRepo(parent, { file }) {
     try {
-      const { filename, mimetype, encoding } = await this.compressFile(file);
+      const { filename, mimetype, encoding, stream } = await this.compressFile(file);
       const currentCommit = await this.getCurrentCommit();
-      const fileBlob = await this.createBlob(filename);
+      const fileBlob = await this.createBlob(stream);
       const newTree = await this.createNewTree(fileBlob, currentCommit.treeSha, filename);
 
       const commitMessage = 'File upload from OPL';
@@ -125,11 +126,11 @@ class GitHubUploader {
   }
 
   _getFileAsUtf8(file) {
-    return readFile(file, 'base64');
+    return file.toString('base64');
   }
 
-  async createBlob(file) {
-    const content = await this._getFileAsUtf8(file);
+  async createBlob(stream) {
+    const content = await this._getFileAsUtf8(stream);
     const blobData = await this.octo.git.createBlob({
       owner: this.org,
       repo: this.repo,
