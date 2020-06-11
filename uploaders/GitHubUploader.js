@@ -47,7 +47,7 @@ class GitHubUploader {
       return new Promise(function (resolve, reject) {
         let w = 2000;
         let q = 60;
-        if (i == 'outputStream') {
+        if (i === 'outputStream') {
           w = 2000;
           q = 60;
         } else {
