@@ -21,7 +21,7 @@
   "dependencies": {
     "@apollo/federation": "^0.15.0",
     "@octokit/rest": "^17.9.2",
-    "apollo-server": "^2.14.2",
+    "apollo-server": "^2.25.3",
     "aws-sdk": "^2.673.0",
     "gm": "^1.23.1"
   },
